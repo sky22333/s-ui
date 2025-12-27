@@ -243,20 +243,25 @@ func (s *SettingService) GetTrafficAge() (int, error) {
 }
 
 func (s *SettingService) GetTimeLocation() (*time.Location, error) {
-	l, err := s.getString("timeLocation")
-	if err != nil {
-		return nil, err
-	}
-	if runtime.GOOS == "windows" {
-		l = "Local"
-	}
-	location, err := time.LoadLocation(l)
-	if err != nil {
-		defaultLocation := defaultValueMap["timeLocation"]
-		logger.Errorf("location <%v> not exist, using default location: %v", l, defaultLocation)
-		return time.LoadLocation(defaultLocation)
-	}
-	return location, nil
+    l, err := s.getString("timeLocation")
+    if err != nil {
+        return nil, err
+    }
+    if runtime.GOOS == "windows" {
+        l = "Local"
+    }
+    location, err := time.LoadLocation(l)
+    if err != nil {
+        defaultLocation := defaultValueMap["timeLocation"]
+        logger.Errorf("location <%v> not exist, using default location: %v", l, defaultLocation)
+        location, err = time.LoadLocation(defaultLocation)
+        if err != nil {
+            // Fallback: fixed time zone, independent of the environment
+            logger.Errorf("failed to load default location <%v>, fallback to fixed Shanghai time", defaultLocation)
+            location = time.FixedZone("CST", 8*3600)
+        }
+    }
+    return location, nil
 }
 
 func (s *SettingService) GetSubListen() (string, error) {
